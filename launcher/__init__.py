@@ -34,3 +34,4 @@ logging.basicConfig(
 # Add two levels of verbosity to info
 logging.addLevelName(19, 'INFO')
 logging.addLevelName(18, 'INFO')
+logging.addLevelName(25, 'INFO')
