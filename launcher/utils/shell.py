@@ -9,6 +9,9 @@ Running bash commands
 """
 
 def bash(cmd, log_level=30):
+    """
+    A task runner for bash
+    """
     import subprocess
     from launcher import logging
     logging.getLogger().setLevel(log_level)

@@ -4,14 +4,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 # @Author: oesteban
 # @Date:   2017-07-18 15:17:07
-from .. import logging
+import os
+from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
 
 def get_parser():
     """ A trivial parser """
     from argparse import ArgumentParser, RawTextHelpFormatter
-    from .. import __version__
 
     parser = ArgumentParser(description='compare two pandas dataframes',
                             formatter_class=RawTextHelpFormatter)
@@ -41,29 +41,30 @@ def main():
         log_level = int(max(20 - 5 * opts.verbose_count, 1))
     logging.getLogger().setLevel(log_level)
 
-    log.info('Running parametric file: %s', opts.input_file)
-
+    # Read parametric file
+    log.info('Running parametric file (dask-launcher-%s): %s', __version__, opts.input_file)
     with open(opts.input_file) as paramfile:
         params = paramfile.readlines()
-
-    # Remove empty lines
+    # Remove empty lines and comments
     params = [p.strip('\n').strip() for p in params if p.strip('\n').strip()]
+    params = [p for p in params if not p.startswith('#')]
+
+    nodes = os.getenv('SLURM_NODELIST')
+    print(nodes)
 
     # Start dask magic
     client = Client()
 
-    tasks = []
+    # Submit task
     log.info('Submitting %d tasks', len(params))
-    for p in params:
-        if p.strip():
-            tasks.append(client.submit(run_task, p, log_level))
+    tasks = [client.submit(run_task, p, log_level) for p in params]
 
+    # Retrieve tasks
     results = [task.result() for task in tasks]
     if sum(results) > 0:
         log.warning('Some tasks failed')
     else:
         log.info('All tasks finished successfully')
-
 
 
 if __name__ == '__main__':
