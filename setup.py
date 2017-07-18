@@ -70,7 +70,7 @@ def main():
         url=__url__,
         download_url=__download__,
         entry_points={'console_scripts': [
-            # 'mriqc=mriqc.bin.mriqc_run:main',
+            'paramrun=launcher.bin.paramrun:main',
         ]},
         packages=find_packages(exclude=['*.tests']),
         package_data=pkg_data,
