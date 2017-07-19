@@ -54,6 +54,8 @@ def main():
     nodes = os.getenv('SLURM_NODELIST')
     tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
     print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
+    print(run_task(['scontrol', 'show', 'hostname', nodes]))
+
 
     # Start dask magic
     client = Client()
