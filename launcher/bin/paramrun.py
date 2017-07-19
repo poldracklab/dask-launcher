@@ -84,7 +84,8 @@ def main():
                 nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
                                      wfile=op.join(cwd, 'worker'),
                                      node=node)
-                sp.run(['ssh', node, "'%s'" % nodecmd], shell=True)
+                worker = sp.run(['ssh', node, "'%s'" % nodecmd], shell=True)
+                print(worker.cmd)
 
                 # ssh = paramiko.SSHClient()
                 # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
