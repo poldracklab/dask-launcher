@@ -10,8 +10,8 @@ from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
-SSH_CMD = """\
-"nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
+WORKER_CMD = """\
+/bin/sh -c "nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
 2> {wfile}-{node}.err < /dev/null &"\
 """.format
 
@@ -74,11 +74,13 @@ def main():
     for node in nodes:
         if node:
             log.info('Starting worker on "%s"', node)
-            nodecmd = SSH_CMD(sfile=op.join(cwd, sched_file),
-                              wfile=op.join(cwd, 'worker'),
-                              node=node)
-            print(nodecmd)
-            sp.run(['ssh', '-nf', node, nodecmd], shell=True)
+            if node == os.getenv('HOSTNAME'):
+                sp.Popen(['dask-worker', '--scheduler-file', sched_file])
+            else:
+                nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
+                                     wfile=op.join(cwd, 'worker'),
+                                     node=node)
+                sp.run(['ssh', '-nf', node, nodecmd], shell=True)
 
     # Start dask magic
     client = Client(scheduler_file=sched_file)
