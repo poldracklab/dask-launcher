@@ -11,8 +11,8 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-/bin/sh -c "nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
-2> {wfile}-{node}.err < /dev/null &"\
+'nice -n 19 sh -c "( ( nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
+2> {wfile}-{node}.err < /dev/null ) & )"'\
 """.format
 
 def get_parser():
