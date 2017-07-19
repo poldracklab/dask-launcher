@@ -11,7 +11,7 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-nohup dask-worker --scheduler-file {sfile} &2> {wfile}-{node}.out < /dev/null &\n
+sh -c "( ( nohup dask-worker --scheduler-file {sfile} &> {wfile}-{node}.out ) & )"\
 """.format
 
 def get_parser():
@@ -81,11 +81,14 @@ def main():
                 pass
                 # sp.Popen(['dask-worker', '--scheduler-file', sched_file])
             else:
-                nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
-                                     wfile=op.join(cwd, 'worker'),
-                                     node=node)
-                worker = sp.run(['ssh', node, "'%s'" % nodecmd], shell=True)
-                print(worker.cmd)
+                nodecmd = ' '.join([
+                    'ssh', node,
+                    WORKER_CMD(sfile=op.join(cwd, sched_file),
+                               wfile=op.join(cwd, 'worker'),
+                               node=node)])
+
+                print(nodecmd)
+                worker = sp.run(nodecmd, shell=True)
 
                 # ssh = paramiko.SSHClient()
                 # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
