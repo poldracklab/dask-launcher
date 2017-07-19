@@ -5,10 +5,15 @@
 # @Author: oesteban
 # @Date:   2017-07-18 15:17:07
 import os
+import os.path as op
 from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
-DLAUNCH_SCHEDFILE = '.dask-scheduler.json'
+DLAUNCH_SCHEDFILE = '.dask-scheduler'
+SSH_CMD = """\
+"nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
+2> {wfile}-{node}.err < /dev/null &"\
+""".format
 
 def get_parser():
     """ A trivial parser """
@@ -56,9 +61,10 @@ def main():
     nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
                    stdout=sp.PIPE).stdout.decode().strip().split('\n')
 
+    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
     # Start scheduler
     log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    sched = sp.Popen(['dask-scheduler', '--scheduler-file', DLAUNCH_SCHEDFILE])
+    sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
 
     # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
@@ -68,13 +74,14 @@ def main():
     for node in nodes:
         if node:
             log.info('Starting worker on "%s"', node)
-            nodecmd = ('"cd %s; nohup dask-worker --scheduler-file %s > worker-%s.out'
-                       ' 2> worker-%s.err < /dev/null &"') % (cwd, DLAUNCH_SCHEDFILE, node, node)
+            nodecmd = SSH_CMD(sfile=op.join(cwd, sched_file),
+                              wfile=op.join(cwd, 'worker'),
+                              node=node)
             print(nodecmd)
             sp.run(['ssh', '-nf', node, nodecmd], shell=True)
 
     # Start dask magic
-    client = Client(scheduler_file=DLAUNCH_SCHEDFILE)
+    client = Client(scheduler_file=sched_file)
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
