@@ -6,6 +6,7 @@
 # @Date:   2017-07-18 15:17:07
 import os
 import os.path as op
+import re
 from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
@@ -71,20 +72,27 @@ def main():
     sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
     # Start workers
-    tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
-    for node in nodes:
+    tasks_per_node = []
+    for ntasks in os.getenv('SLURM_TASKS_PER_NODE').split(','):
+        try:
+            tasks_per_node += [int(ntasks)]
+        except ValueError:
+            values = re.match('(\d+)\(x(\d+)\)', ntasks).groups()
+            tasks_per_node += [int(values[0])] * int(values[1])
+
+    for node, ntasks zip(nodes, tasks_per_node):
         if node:
             log.info('Starting worker on "%s"', node)
             if node == os.getenv('HOSTNAME'):
                 sp.Popen(['dask-worker', '--scheduler-file', sched_file,
-                          '--nprocs', '%d' % tasks_per_node])
+                          '--nprocs', '%d' % ntasks])
             else:
                 nodecmd = ' '.join([
                     'ssh', node,
                     "'%s'" % WORKER_CMD(sfile=sched_file,
                                         wfile=op.join(rmi_dir, 'worker'),
                                         node=node,
-                                        nprocs=int(tasks_per_node))
+                                        nprocs=ntasks)
                 ])
                 sp.run(nodecmd, shell=True)
 
