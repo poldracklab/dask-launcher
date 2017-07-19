@@ -11,8 +11,8 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-'nice -n 19 sh -c "( ( nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
-2> {wfile}-{node}.err < /dev/null ) & )"'\
+nice -n 19 sh -c "( ( nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
+2> {wfile}-{node}.err < /dev/null ) & )"\
 """.format
 
 def get_parser():
@@ -38,6 +38,7 @@ def get_parser():
 def main():
     """Entry point"""
     import subprocess as sp
+    import paramiko
     from dask.distributed import Client
     from ..utils import bash as run_task
     opts = get_parser().parse_args()
@@ -62,28 +63,38 @@ def main():
                    stdout=sp.PIPE).stdout.decode().strip().split('\n')
     nodes = [node for node in nodes if node]
 
-    log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    sched = sp.Popen(['dask-ssh', '--scheduler-file', nodes, '--log-directory', os.getcwd()])
+    # log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
+    # sched = sp.Popen(['dask-ssh', '--scheduler-file', nodes, '--log-directory', os.getcwd()])
 
     # Start scheduler
-    # sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
-    # log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    # sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
+    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
+    log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
+    sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
     # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
     # print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
-    # cwd = os.getcwd()
     # Start workers
-    # for node in nodes:
-    #     if node:
-    #         log.info('Starting worker on "%s"', node)
-    #         if node == os.getenv('HOSTNAME'):
-    #             sp.Popen(['dask-worker', '--scheduler-file', sched_file])
-    #         else:
-    #             nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
-    #                                  wfile=op.join(cwd, 'worker'),
-    #                                  node=node)
-    #             sp.run(['ssh', '-nf', node, nodecmd], shell=True)
+    cwd = os.getcwd()
+    for node in nodes:
+        if node:
+            log.info('Starting worker on "%s"', node)
+            if node == os.getenv('HOSTNAME'):
+                pass
+                # sp.Popen(['dask-worker', '--scheduler-file', sched_file])
+            else:
+                nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
+                                     wfile=op.join(cwd, 'worker'),
+                                     node=node)
+                # sp.run(['ssh', '-nf', node, nodecmd], shell=True)
+
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(hostname=node)
+                channel = ssh.get_transport().open_session()
+                channel.get_pty()
+                shell = ssh.invoke_shell()
+                print(nodecmd)
+                shell.send(nodecmd)
 
     # Start dask magic
     client = Client('%s:8786' % nodes[0])
