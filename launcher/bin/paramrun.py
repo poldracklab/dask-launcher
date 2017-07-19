@@ -59,8 +59,6 @@ def main():
     # Start scheduler
     log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
     sched = sp.Popen(['dask-scheduler', '--scheduler-file', DLAUNCH_SCHEDFILE])
-    if sched.returncode != 0:
-        raise RuntimeError('Failed to start scheduler')
 
 
     # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
@@ -70,11 +68,10 @@ def main():
     for node in nodes:
         if node:
             log.info('Starting worker on "%s"', node)
-            sp.run([
-                'ssh', '-n', '-f', node,
-                ('"cd %s; nohup dask-worker --scheduler-file %s > worker-%s.out'
-                 ' 2> worker-%s.err < /dev/null &') % (cwd, DLAUNCH_SCHEDFILE, node, node)],
-                   shell=True)
+            nodecmd = ('"cd %s; nohup dask-worker --scheduler-file %s > worker-%s.out'
+                       ' 2> worker-%s.err < /dev/null &"') % (cwd, DLAUNCH_SCHEDFILE, node, node)
+            print(nodecmd)
+            sp.run(['ssh', '-nf', node, nodecmd], shell=True)
 
     # Start dask magic
     client = Client(scheduler_file=DLAUNCH_SCHEDFILE)
