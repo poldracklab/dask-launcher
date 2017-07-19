@@ -50,7 +50,8 @@ def main():
     params = [p for p in params if not p.startswith('#')]
 
     nodes = os.getenv('SLURM_NODELIST')
-    print(nodes)
+    tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
+    print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node)
 
     # Start dask magic
     client = Client()
