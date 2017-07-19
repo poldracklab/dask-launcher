@@ -8,6 +8,7 @@ import os
 from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
+DLAUNCH_SCHEDFILE = '.dask-scheduler.json'
 
 def get_parser():
     """ A trivial parser """
@@ -53,12 +54,25 @@ def main():
     # Environment
     os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
     nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
-                   stdout=sp.PIPE).stdout.split('\n')
-    tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
-    print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
+                   stdout=sp.PIPE).stdout.decode().strip().split('\n')
+
+    # Start scheduler
+    log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
+    sched_cmd = sp.run(['dask-scheduler', '--scheduler-file', DLAUNCH_SCHEDFILE])
+    if sched_cmd.returncode != 0:
+        raise RuntimeError('Failed to start scheduler')
+
+
+    # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
+    # print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
+    # Start workers
+    for node in nodes:
+        if node:
+            log.info('Starting worker on "%s"', node)
+            worker_cmd = sp.run(['ssh', node, 'dask-worker', '--scheduler-file', DLAUNCH_SCHEDFILE])
 
     # Start dask magic
-    client = Client()
+    client = Client(scheduler_file=DLAUNCH_SCHEDFILE)
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
