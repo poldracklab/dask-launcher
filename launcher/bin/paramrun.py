@@ -83,9 +83,10 @@ def main():
             else:
                 nodecmd = ' '.join([
                     'ssh', node,
-                    WORKER_CMD(sfile=op.join(cwd, sched_file),
-                               wfile=op.join(cwd, 'worker'),
-                               node=node)])
+                    "'%s'" % WORKER_CMD(sfile=op.join(cwd, sched_file),
+                                        wfile=op.join(cwd, 'worker'),
+                                        node=node)
+                ])
 
                 print(nodecmd)
                 worker = sp.run(nodecmd, shell=True)
