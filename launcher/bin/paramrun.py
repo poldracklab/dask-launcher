@@ -49,9 +49,11 @@ def main():
     params = [p.strip('\n').strip() for p in params if p.strip('\n').strip()]
     params = [p for p in params if not p.startswith('#')]
 
+    # Environment
+    os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
     nodes = os.getenv('SLURM_NODELIST')
     tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
-    print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node)
+    print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
 
     # Start dask magic
     client = Client()
