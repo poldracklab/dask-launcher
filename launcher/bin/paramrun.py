@@ -101,12 +101,11 @@ def main():
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
-    tasks = client.map(run_task, params, log_level)
+    tasks = client.map(run_task, params, [log_level] * len(params))
 
     # Retrieve exit codes:
-    success = client.submit(sum, tasks)
-
-    if success == 0:
+    success = client.gather(tasks)
+    if sum(success) == 0:
         log.info('All tasks finished successfully')
     else:
         log.warning('Some tasks failed')
