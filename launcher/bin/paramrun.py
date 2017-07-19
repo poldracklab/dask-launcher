@@ -60,30 +60,33 @@ def main():
     os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
     nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
                    stdout=sp.PIPE).stdout.decode().strip().split('\n')
+    nodes = [node for node in nodes if node]
 
-    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
-    # Start scheduler
     log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
+    sched = sp.Popen(['dask-ssh', '--scheduler-file', nodes, '--log-directory', os.getcwd()])
 
+    # Start scheduler
+    # sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
+    # log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
+    # sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
     # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
     # print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
-    cwd = os.getcwd()
+    # cwd = os.getcwd()
     # Start workers
-    for node in nodes:
-        if node:
-            log.info('Starting worker on "%s"', node)
-            if node == os.getenv('HOSTNAME'):
-                sp.Popen(['dask-worker', '--scheduler-file', sched_file])
-            else:
-                nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
-                                     wfile=op.join(cwd, 'worker'),
-                                     node=node)
-                sp.run(['ssh', '-nf', node, nodecmd], shell=True)
+    # for node in nodes:
+    #     if node:
+    #         log.info('Starting worker on "%s"', node)
+    #         if node == os.getenv('HOSTNAME'):
+    #             sp.Popen(['dask-worker', '--scheduler-file', sched_file])
+    #         else:
+    #             nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
+    #                                  wfile=op.join(cwd, 'worker'),
+    #                                  node=node)
+    #             sp.run(['ssh', '-nf', node, nodecmd], shell=True)
 
     # Start dask magic
-    client = Client(scheduler_file=sched_file)
+    client = Client('%s:8786' % nodes[0])
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
