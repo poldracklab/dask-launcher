@@ -51,7 +51,7 @@ def main():
     # Environment: Setup work directory and variables
     job_id = os.getenv('SLURM_JOBID')
     os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
-    rmi_dir = os.abspath('.dlauncher-rmi-%s' % job_id)
+    rmi_dir = op.abspath('.dlauncher-rmi-%s' % job_id)
     os.mkdirs(rmi_dir, exist_ok=True)
     sched_file = op.join(rmi_dir, DLAUNCH_SCHEDFILE + '.json')
     nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
