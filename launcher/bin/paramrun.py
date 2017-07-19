@@ -11,8 +11,7 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-nice -n 19 sh -c "( ( nohup dask-worker --scheduler-file {sfile} > {wfile}-{node}.out \
-2> {wfile}-{node}.err < /dev/null ) & )"\
+nohup dask-worker --scheduler-file {sfile} &2> {wfile}-{node}.out < /dev/null &\n
 """.format
 
 def get_parser():
@@ -85,16 +84,16 @@ def main():
                 nodecmd = WORKER_CMD(sfile=op.join(cwd, sched_file),
                                      wfile=op.join(cwd, 'worker'),
                                      node=node)
-                # sp.run(['ssh', '-nf', node, nodecmd], shell=True)
+                sp.run(['ssh', node, "'%s'" % nodecmd], shell=True)
 
-                ssh = paramiko.SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(hostname=node)
-                channel = ssh.get_transport().open_session()
-                channel.get_pty()
-                shell = ssh.invoke_shell()
-                print(nodecmd)
-                shell.send(nodecmd)
+                # ssh = paramiko.SSHClient()
+                # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                # ssh.connect(hostname=node)
+                # channel = ssh.get_transport().open_session()
+                # channel.get_pty()
+                # shell = ssh.invoke_shell()
+                # print(nodecmd)
+                # shell.send(nodecmd)
 
     # Start dask magic
     client = Client('%s:8786' % nodes[0])
