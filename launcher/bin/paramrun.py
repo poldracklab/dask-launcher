@@ -11,7 +11,7 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-sh -c "( ( nohup dask-worker --scheduler-file {sfile} &> {wfile}-{node}.out ) & )"\
+sh -c "( ( nohup dask-worker --scheduler-file {sfile} &> {wfile}-{jid}-{node}.out ) & )"\
 """.format
 
 def get_parser():
@@ -66,7 +66,8 @@ def main():
     # sched = sp.Popen(['dask-ssh', '--scheduler-file', nodes, '--log-directory', os.getcwd()])
 
     # Start scheduler
-    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % os.getenv('SLURM_JOBID')
+    jid = os.getenv('SLURM_JOBID')
+    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % jid
     log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
     sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
@@ -85,6 +86,7 @@ def main():
                     'ssh', node,
                     "'%s'" % WORKER_CMD(sfile=op.join(cwd, sched_file),
                                         wfile=op.join(cwd, 'worker'),
+                                        jid=jid,
                                         node=node)
                 ])
 
