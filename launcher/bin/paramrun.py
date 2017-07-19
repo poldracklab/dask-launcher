@@ -80,7 +80,7 @@ def main():
             values = re.match('(\d+)\(x(\d+)\)', ntasks).groups()
             tasks_per_node += [int(values[0])] * int(values[1])
 
-    for node, ntasks zip(nodes, tasks_per_node):
+    for node, ntasks in zip(nodes, tasks_per_node):
         if node:
             log.info('Starting worker on "%s"', node)
             if node == os.getenv('HOSTNAME'):
@@ -101,14 +101,15 @@ def main():
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
-    tasks = [client.submit(run_task, p, log_level) for p in params]
+    tasks = client.map(run_task, params, log_level)
 
-    # Retrieve tasks
-    results = [task.result() for task in tasks]
-    if sum(results) > 0:
-        log.warning('Some tasks failed')
-    else:
+    # Retrieve exit codes:
+    success = client.submit(sum, tasks)
+
+    if success == 0:
         log.info('All tasks finished successfully')
+    else:
+        log.warning('Some tasks failed')
 
     sched.kill()
     sched.wait()

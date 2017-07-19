@@ -17,6 +17,6 @@ def bash(cmd, log_level=30):
     logging.getLogger().setLevel(log_level)
     log = logging.getLogger('launcher.tasks')
     log.log(25, 'Task started: "%s"', cmd)
-    pout = subprocess.run(cmd.split(' ')).returncode
+    pout = abs(subprocess.run(cmd.split(' ')).returncode)
     log.log(25, 'Task finished: "%s"', cmd)
     return pout
