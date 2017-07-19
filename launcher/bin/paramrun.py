@@ -11,7 +11,7 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-sh -c "( ( nohup dask-worker --scheduler-file {sfile} &> {wfile}-{jid}-{node}.out ) & )"\
+sh -c "( ( nohup dask-worker --scheduler-file {sfile} --nprocs {nprocs} &> {wfile}-{node}.out ) & )"\
 """.format
 
 def get_parser():
@@ -48,6 +48,16 @@ def main():
         log_level = int(max(20 - 5 * opts.verbose_count, 1))
     logging.getLogger().setLevel(log_level)
 
+    # Environment: Setup work directory and variables
+    job_id = os.getenv('SLURM_JOBID')
+    os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
+    rmi_dir = os.abspath('.dlauncher-rmi-%s' % job_id)
+    os.mkdirs(rmi_dir, exist_ok=True)
+    sched_file = op.join(rmi_dir, DLAUNCH_SCHEDFILE + '.json')
+    nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
+                   stdout=sp.PIPE).stdout.decode().strip().split('\n')
+    nodes = [node for node in nodes if node]
+
     # Read parametric file
     log.info('Running parametric file (dask-launcher-%s): %s', __version__, opts.input_file)
     with open(opts.input_file) as paramfile:
@@ -56,51 +66,27 @@ def main():
     params = [p.strip('\n').strip() for p in params if p.strip('\n').strip()]
     params = [p for p in params if not p.startswith('#')]
 
-    # Environment
-    os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
-    nodes = sp.run(['scontrol', 'show', 'hostname', os.getenv('SLURM_NODELIST')],
-                   stdout=sp.PIPE).stdout.decode().strip().split('\n')
-    nodes = [node for node in nodes if node]
-
-    # log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    # sched = sp.Popen(['dask-ssh', '--scheduler-file', nodes, '--log-directory', os.getcwd()])
-
     # Start scheduler
-    jid = os.getenv('SLURM_JOBID')
-    sched_file = DLAUNCH_SCHEDFILE + '-%s.json' % jid
     log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
     sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
 
-    # tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
-    # print('SLURM_NODELIST=', nodes, 'SLURM_TASKS_PER_NODE=', tasks_per_node, 'HOSTNAME=', os.getenv('HOSTNAME'))
     # Start workers
-    cwd = os.getcwd()
+    tasks_per_node = os.getenv('SLURM_TASKS_PER_NODE')
     for node in nodes:
         if node:
             log.info('Starting worker on "%s"', node)
             if node == os.getenv('HOSTNAME'):
-                pass
-                # sp.Popen(['dask-worker', '--scheduler-file', sched_file])
+                sp.Popen(['dask-worker', '--scheduler-file', sched_file,
+                          '--nprocs', '%d' % tasks_per_node])
             else:
                 nodecmd = ' '.join([
                     'ssh', node,
-                    "'%s'" % WORKER_CMD(sfile=op.join(cwd, sched_file),
-                                        wfile=op.join(cwd, 'worker'),
-                                        jid=jid,
-                                        node=node)
+                    "'%s'" % WORKER_CMD(sfile=sched_file,
+                                        wfile=op.join(rmi_dir, 'worker'),
+                                        node=node,
+                                        nprocs=int(tasks_per_node))
                 ])
-
-                print(nodecmd)
-                worker = sp.run(nodecmd, shell=True)
-
-                # ssh = paramiko.SSHClient()
-                # ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                # ssh.connect(hostname=node)
-                # channel = ssh.get_transport().open_session()
-                # channel.get_pty()
-                # shell = ssh.invoke_shell()
-                # print(nodecmd)
-                # shell.send(nodecmd)
+                sp.run(nodecmd, shell=True)
 
     # Start dask magic
     client = Client('%s:8786' % nodes[0])
