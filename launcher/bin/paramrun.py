@@ -84,8 +84,10 @@ def main():
         if node:
             log.info('Starting worker on "%s"', node)
             if node == os.getenv('HOSTNAME'):
-                sp.Popen(['dask-worker', '--scheduler-file', sched_file,
-                          '--nprocs', '%d' % ntasks])
+                sp.Popen(
+                    'dask-worker --scheduler-file {sfile} --nprocs {nprocs} &> {logfile}'.format(
+                        sfile=sched_file, nprocs=ntasks,
+                        logfile=op.join(rmi_dir, 'worker-%s.out' % node)))
             else:
                 nodecmd = ' '.join([
                     'ssh', node,
