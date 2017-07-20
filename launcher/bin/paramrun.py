@@ -87,7 +87,8 @@ def main():
                 sp.Popen(
                     'dask-worker --scheduler-file {sfile} --nprocs {nprocs} &> {logfile}'.format(
                         sfile=sched_file, nprocs=ntasks,
-                        logfile=op.join(rmi_dir, 'worker-%s.out' % node)))
+                        logfile=op.join(rmi_dir, 'worker-%s.out' % node)),
+                    shell=True)
             else:
                 nodecmd = ' '.join([
                     'ssh', node,
