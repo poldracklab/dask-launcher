@@ -68,8 +68,10 @@ def main():
     params = [p for p in params if not p.startswith('#')]
 
     # Start scheduler
-    log.info('Starting scheduler on "%s"', os.getenv('HOSTNAME'))
-    sched = sp.Popen(['dask-scheduler', '--scheduler-file', sched_file])
+    sched_node = os.getenv('HOSTNAME')
+    log.info('Starting scheduler on "%s"', sched_node)
+    sched = sp.Popen('dask-scheduler --scheduler-file {sfile} &> {logfile}'.format(
+        sfile=sched_file, logfile=op.join(rmi_dir, 'scheduler-%s.out' % sched_node)), shell=True)
 
     # Start workers
     tasks_per_node = []
