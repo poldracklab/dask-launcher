@@ -38,7 +38,6 @@ def get_parser():
 def main():
     """Entry point"""
     import subprocess as sp
-    import paramiko
     from dask.distributed import Client
     from ..utils import bash as run_task
     opts = get_parser().parse_args()
