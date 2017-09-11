@@ -9,13 +9,15 @@ Running bash commands
 """
 
 
-def bash(cmd, task_id=0, job_id=0):
+def bash(args):
     """
     A task runner for bash
     """
     import os
     from datetime import datetime
     import subprocess
+
+    cmd, task_id, job_id = args
 
     log_path = os.path.join(
         os.path.abspath('.dlauncher-rmi-%s' % job_id), 'task-%05d')
