@@ -84,21 +84,15 @@ def main():
     for node, ntasks in zip(nodes, tasks_per_node):
         if node and ntasks > 0:
             log.info('Starting worker on "%s"', node)
-            if node == os.getenv('HOSTNAME'):
-                sp.Popen(
-                    'dask-worker --scheduler-file {sfile} --nprocs {nprocs} &> {logfile}'.format(
-                        sfile=sched_file, nprocs=ntasks,
-                        logfile=op.join(rmi_dir, 'worker-%s.out' % node)),
-                    shell=True)
-            else:
-                nodecmd = ' '.join([
-                    'ssh', node,
-                    "'%s'" % WORKER_CMD(sfile=sched_file,
-                                        wfile=op.join(rmi_dir, 'worker'),
-                                        node=node,
-                                        nprocs=ntasks)
-                ])
-                sp.run(nodecmd, shell=True)
+            nodecmd = WORKER_CMD(sfile=sched_file,
+                                 wfile=op.join(rmi_dir, 'worker'),
+                                 node=node,
+                                 nprocs=ntasks)
+
+            if node != os.getenv('HOSTNAME'):
+                nodecmd = 'ssh \'%s\'' % nodecmd
+
+            sp.run(nodecmd, shell=True)
 
     # Start dask magic
     client = Client(scheduler_file=sched_file)
