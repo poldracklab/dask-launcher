@@ -105,7 +105,7 @@ def main():
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
-    tasks = client.map(run_task, params)
+    tasks = client.map(run_task, [(p, i, job_id) for i, p in enumerate(params)])
 
     # Retrieve exit codes:
     success = client.gather(tasks)
