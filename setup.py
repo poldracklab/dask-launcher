@@ -71,6 +71,7 @@ def main():
         download_url=__download__,
         entry_points={'console_scripts': [
             'paramrun=launcher.bin.paramrun:main',
+            'launch=launcher.bin.launch:main',
         ]},
         packages=find_packages(exclude=['*.tests']),
         package_data=pkg_data,

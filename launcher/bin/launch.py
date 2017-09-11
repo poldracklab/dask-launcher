@@ -6,6 +6,7 @@
 from .. import logging, __version__
 log = logging.getLogger('launcher.cli')
 
+
 def get_parser():
     """ A trivial parser """
     from argparse import ArgumentParser, RawTextHelpFormatter
@@ -14,14 +15,14 @@ def get_parser():
                             formatter_class=RawTextHelpFormatter)
     parser.add_argument('tasks_file', action='store', help='input parametric job')
 
-    # optional arguments
+    # arguments about the job being submitted
     g_job = parser.add_argument_group('Job details')
     g_job.add_argument('-j', '--jobname', default='dlaunch', help='Job name')
     g_job.add_argument('-A', '--allocation', default='Analysis_Lonestar',
                        help='Project allocation')
     g_job.add_argument('--email', help='email address for notifications')
 
-
+    # arguments about resources
     g_resources = parser.add_argument_group('Configuration of requested resources')
     g_resources.add_argument('-N', '--nodes', action='store', dest='num_nodes', type=int,
                              default=1, help='number of nodes to request')
@@ -41,3 +42,11 @@ def get_parser():
                            action="count", default=0,
                            help="increases log verbosity for each occurence, debug level is -vvv")
     return parser
+
+
+def main():
+    raise NotImplementedError
+
+
+if __name__ == '__main__':
+    main()

@@ -10,8 +10,10 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-sh -c "( ( nohup dask-worker --scheduler-file {sfile} --nprocs {nprocs} &> {wfile}-{node}.out ) & )"\
+sh -c "( ( nohup dask-worker --scheduler-file {sfile} --nprocs {nprocs} \
+&> {wfile}-{node}.out ) & )"\
 """.format
+
 
 def get_parser():
     """ A trivial parser """
@@ -99,11 +101,11 @@ def main():
                 sp.run(nodecmd, shell=True)
 
     # Start dask magic
-    client = Client('%s:8786' % nodes[0])
+    client = Client(scheduler_file=sched_file)
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
-    tasks = client.map(run_task, params, [log_level] * len(params))
+    tasks = client.map(run_task, params)
 
     # Retrieve exit codes:
     success = client.gather(tasks)

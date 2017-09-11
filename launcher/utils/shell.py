@@ -8,15 +8,10 @@
 Running bash commands
 """
 
-def bash(cmd, log_level=30):
+def bash(cmd):
     """
     A task runner for bash
     """
     import subprocess
-    from launcher import logging
-    logging.getLogger().setLevel(log_level)
-    log = logging.getLogger('launcher.tasks')
-    log.log(25, 'Task started: "%s"', cmd)
-    pout = abs(subprocess.run(cmd.split(' ')).returncode)
-    log.log(25, 'Task finished: "%s"', cmd)
+    pout = abs(subprocess.run(cmd, shell=True).returncode)
     return pout
