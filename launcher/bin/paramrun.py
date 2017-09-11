@@ -82,7 +82,7 @@ def main():
             tasks_per_node += [int(values[0])] * int(values[1])
 
     for node, ntasks in zip(nodes, tasks_per_node):
-        if node:
+        if node and ntasks > 0:
             log.info('Starting worker on "%s"', node)
             if node == os.getenv('HOSTNAME'):
                 sp.Popen(

@@ -37,7 +37,7 @@ def bash(args):
     task = subprocess.run(cmd, shell=True, stdout=out_file, stderr=err_file)
     pout = abs(task.returncode)
 
-    out_file.write("""[{date}] Finished task {job_id}-{task_id}.""".format(
+    out_file.write("""[{date}] Finished task {job_id}-{task_id}.\n""".format(
         date=datetime.now().isoformat(timespec='seconds'),
         task_id=task_id,
         job_id=job_id
