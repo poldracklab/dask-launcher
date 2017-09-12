@@ -36,7 +36,7 @@ def bash(args):
         cmd=cmd,
         node=os.getenv('HOSTNAME', sp.run(
             'hostname -s', shell=True, stdout=sp.PIPE).stdout.decode(
-                sys.stdout.encoding).splitlines())
+                sys.stdout.encoding).splitlines()[0].strip('\n'))
     ))
     out_file.flush()
     task = sp.run(cmd, shell=True, stdout=out_file, stderr=err_file)
