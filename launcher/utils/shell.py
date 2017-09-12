@@ -15,7 +15,7 @@ def bash(args):
     """
     import os
     from datetime import datetime
-    import subprocess
+    import subprocess as sp
 
     cmd, task_id, job_id = args
 
@@ -32,10 +32,11 @@ def bash(args):
         task_id=task_id,
         job_id=job_id,
         cmd=cmd,
-        node=os.getenv('HOSTNAME', 'Unknown')
+        node=os.getenv('HOSTNAME', str(sp.run(
+            'hostname -s', shell=True, stdout=sp.PIPE).stdout))
     ))
     out_file.flush()
-    task = subprocess.run(cmd, shell=True, stdout=out_file, stderr=err_file)
+    task = sp.run(cmd, shell=True, stdout=out_file, stderr=err_file)
     pout = abs(task.returncode)
 
     out_file.write("""[{date}] Finished task {job_id}-{task_id}.\n""".format(
