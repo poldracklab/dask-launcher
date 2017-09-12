@@ -10,7 +10,7 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-dask-worker --scheduler-file {sfile} --nprocs {nprocs} \
+dask-worker --scheduler-file {sfile} --nprocs {nprocs} --no-bokeh \
 &> {wfile}-{node}.out\
 """.format
 
@@ -89,10 +89,11 @@ def main():
                                  nprocs=ntasks)
             log.info('Starting worker on "%s":\n%s', node, nodecmd)
 
-            if node != os.getenv('HOSTNAME'):
+            if node == os.getenv('HOSTNAME'):
+                sp.Popen(nodecmd, shell=True)
+            else:
                 nodecmd = 'ssh %s \'sh -c "( ( nohup %s ) & )"\'' % (node, nodecmd)
-
-            sp.run(nodecmd, shell=True)
+                sp.run(nodecmd, shell=True)
 
     # Start dask magic
     client = Client(scheduler_file=sched_file)
