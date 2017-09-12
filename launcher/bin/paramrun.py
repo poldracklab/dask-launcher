@@ -94,7 +94,7 @@ def main():
                 sp.Popen(nodecmd, shell=True)
             else:
                 nodecmd = 'ssh -t %s \'cd %s; sh -c "( ( nohup %s ) & )"\'' % (
-                    workdir, node, nodecmd)
+                    node, workdir, nodecmd)
                 sp.run(nodecmd, shell=True)
 
     # Start dask magic
