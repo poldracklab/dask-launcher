@@ -14,6 +14,7 @@ def bash(args):
     A task runner for bash
     """
     import os
+    import sys
     from datetime import datetime
     import subprocess as sp
 
@@ -32,8 +33,9 @@ def bash(args):
         task_id=task_id,
         job_id=job_id,
         cmd=cmd,
-        node=os.getenv('HOSTNAME', str(sp.run(
-            'hostname -s', shell=True, stdout=sp.PIPE).stdout))
+        node=os.getenv('HOSTNAME', sp.run(
+            'hostname -s', shell=True, stdout=sp.PIPE).stdout.decode(
+                sys.stdout.encoding).splitlines())
     ))
     out_file.flush()
     task = sp.run(cmd, shell=True, stdout=out_file, stderr=err_file)
