@@ -50,7 +50,8 @@ def main():
 
     # Environment: Setup work directory and variables
     job_id = os.getenv('SLURM_JOBID')
-    os.chdir(os.getenv('DLAUNCH_WORKDIR', os.getcwd()))
+    workdir = os.getenv('DLAUNCH_WORKDIR', os.getcwd())
+    os.chdir(workdir)
     rmi_dir = op.abspath('.dlauncher-rmi-%s' % job_id)
     os.makedirs(rmi_dir, exist_ok=True)
     sched_file = op.join(rmi_dir, DLAUNCH_SCHEDFILE + '.json')
@@ -92,7 +93,8 @@ def main():
             if node == os.getenv('HOSTNAME'):
                 sp.Popen(nodecmd, shell=True)
             else:
-                nodecmd = 'ssh %s \'sh -c "( ( nohup %s ) & )"\'' % (node, nodecmd)
+                nodecmd = 'ssh -t %s \'cd %s; sh -c "( ( nohup %s ) & )"\'' % (
+                    workdir, node, nodecmd)
                 sp.run(nodecmd, shell=True)
 
     # Start dask magic
