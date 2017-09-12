@@ -25,13 +25,14 @@ def bash(args):
     err_file = open((log_path + '.err') % task_id, 'w')
 
     out_file.write("""\
-[{date}] Starting task {job_id}-{task_id}:
+[{date}] Starting task {job_id}-{task_id} (running on '{node}'):
 {cmd}
 """.format(
         date=datetime.now().isoformat(timespec='seconds'),
         task_id=task_id,
         job_id=job_id,
-        cmd=cmd
+        cmd=cmd,
+        node=os.getenv('HOSTNAME', 'Unknown')
     ))
     out_file.flush()
     task = subprocess.run(cmd, shell=True, stdout=out_file, stderr=err_file)
