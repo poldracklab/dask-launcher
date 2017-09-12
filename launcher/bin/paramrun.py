@@ -94,7 +94,7 @@ def main():
                 sp.Popen(nodecmd, shell=True)
             else:
                 nodecmd = 'ssh %s \'sh -c "cd %s; ( ( nohup %s ) & )"\'' % (
-                    node, workdir, nodecmd)
+                    node, rmi_dir, nodecmd)
                 sp.run(nodecmd, shell=True)
 
     # Start dask magic
@@ -102,7 +102,7 @@ def main():
 
     # Submit task
     log.info('Submitting %d tasks', len(params))
-    tasks = client.map(run_task, [(p, i, job_id) for i, p in enumerate(params)])
+    tasks = client.map(run_task, [(p, i, job_id, workdir) for i, p in enumerate(params)])
 
     # Retrieve exit codes:
     success = client.gather(tasks)

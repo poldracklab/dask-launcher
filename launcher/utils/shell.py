@@ -18,8 +18,9 @@ def bash(args):
     from datetime import datetime
     import subprocess as sp
 
-    cmd, task_id, job_id = args
+    cmd, task_id, job_id, workdir = args
 
+    os.chdir(workdir)
     log_path = os.path.join(
         os.path.abspath('.dlauncher-rmi-%s' % job_id), 'task-%05d')
     out_file = open((log_path + '.out') % task_id, 'w')
