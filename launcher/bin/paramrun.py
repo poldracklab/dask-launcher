@@ -10,8 +10,8 @@ log = logging.getLogger('launcher.cli')
 
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
-sh -c "( ( nohup dask-worker --scheduler-file {sfile} --nprocs {nprocs} \
-&> {wfile}-{node}.out ) & )"\
+dask-worker --scheduler-file {sfile} --nprocs {nprocs} \
+&> {wfile}-{node}.out"\
 """.format
 
 
@@ -83,14 +83,14 @@ def main():
 
     for node, ntasks in zip(nodes, tasks_per_node):
         if node and ntasks > 0:
-            log.info('Starting worker on "%s"', node)
             nodecmd = WORKER_CMD(sfile=sched_file,
                                  wfile=op.join(rmi_dir, 'worker'),
                                  node=node,
                                  nprocs=ntasks)
+            log.info('Starting worker on "%s":\n%s', node, nodecmd)
 
             if node != os.getenv('HOSTNAME'):
-                nodecmd = 'ssh \'%s\'' % nodecmd
+                nodecmd = 'ssh %s \'sh -c "( ( nohup %s ) & )\'' % (node, nodecmd)
 
             sp.run(nodecmd, shell=True)
 
