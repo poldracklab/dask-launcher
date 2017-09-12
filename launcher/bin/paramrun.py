@@ -91,7 +91,7 @@ def main():
             log.info('Starting worker on "%s":\n%s', node, nodecmd)
 
             if node == os.getenv('HOSTNAME'):
-                sp.Popen(nodecmd, shell=True)
+                sp.Popen(nodecmd, shell=True, cwd=rmi_dir)
             else:
                 nodecmd = 'ssh %s \'sh -c "cd %s; ( ( nohup %s ) & )"\'' % (
                     node, rmi_dir, nodecmd)
