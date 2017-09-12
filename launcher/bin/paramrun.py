@@ -93,7 +93,7 @@ def main():
             if node == os.getenv('HOSTNAME'):
                 sp.Popen(nodecmd, shell=True)
             else:
-                nodecmd = 'ssh -t %s \'cd %s; sh -c "( ( nohup %s ) & )"\'' % (
+                nodecmd = 'ssh -t %s \'sh -c "cd %s; ( ( nohup %s ) & )"\'' % (
                     node, workdir, nodecmd)
                 sp.run(nodecmd, shell=True)
 
