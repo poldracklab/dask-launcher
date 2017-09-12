@@ -11,7 +11,7 @@ log = logging.getLogger('launcher.cli')
 DLAUNCH_SCHEDFILE = '.dask-scheduler'
 WORKER_CMD = """\
 dask-worker --scheduler-file {sfile} --nprocs {nprocs} \
-&> {wfile}-{node}.out"\
+&> {wfile}-{node}.out\
 """.format
 
 
@@ -90,7 +90,7 @@ def main():
             log.info('Starting worker on "%s":\n%s', node, nodecmd)
 
             if node != os.getenv('HOSTNAME'):
-                nodecmd = 'ssh %s \'sh -c "( ( nohup %s ) & )\'' % (node, nodecmd)
+                nodecmd = 'ssh %s \'sh -c "( ( nohup %s ) & )"\'' % (node, nodecmd)
 
             sp.run(nodecmd, shell=True)
 
